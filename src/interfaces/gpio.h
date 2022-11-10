@@ -2,6 +2,7 @@
 #define CSOS_INTERFACES_GPIO_H_
 
 #include <Arduino.h>
+#include <I2CIP.h>
 
 #include <types.h>
 #include <interface.h>
@@ -20,24 +21,77 @@
 #define GPIO_GPIO     0x12 // Port register
 #define GPIO_OLAT     0x14 // Output latch register
 
+// Constants
+#define GPIO_NUMPINS  16
+
 // Settings
 #define GPIO_ADDR     0x20 // Default address
+#define GPIO_ID       "gpio"
 
-#define GPIO_PORT(pin) (gpioport_t)((pin < 8) ? 0 : 1)          // Determine port from pin number
-#define GPIO_REG(reg, port) (uint16_t)(port == 0 ? reg : reg+1) // Determine register from base address and port
+/**
+ * Determine shifted register address from pin number.
+ **/
+#define GPIO_PIN_REG(reg, pin) (uint8_t)((pin < 8) ? reg : reg+1)
 
-// Interface class for the MCP23017 I2C GPIO expander IC
-namespace Interface::GPIO {
+#define GPIO_PIN_SHIFT(pin) (pin % 8)
 
-  typedef enum gpioport_t {
-    PORT_A,
-    PORT_B
-  } gpioport_t;
-  
-  errorlevel_t pinMode(uint8_t pin, uint8_t mode);
-  errorlevel_t readPort(gpioport_t port, uint8_t* dest);
-  errorlevel_t digitalWrite(uint8_t pin, uint8_t value);
-  errorlevel_t digitalRead(uint8_t pin, uint8_t* dest);
+typedef enum {
+  GPIO_PIN_A0,
+  GPIO_PIN_A1,
+  GPIO_PIN_A2,
+  GPIO_PIN_A3,
+  GPIO_PIN_A4,
+  GPIO_PIN_A5,
+  GPIO_PIN_A6,
+  GPIO_PIN_A7,
+  GPIO_PIN_B0,
+  GPIO_PIN_B1,
+  GPIO_PIN_B2,
+  GPIO_PIN_B3,
+  GPIO_PIN_B4,
+  GPIO_PIN_B5,
+  GPIO_PIN_B6,
+  GPIO_PIN_B7,
+} gpio_pin_t;
+
+typedef enum {
+  GPIO_PIN_UNDEF = -1,
+  GPIO_PIN_LOW = LOW,
+  GPIO_PIN_HIGH = HIGH
+} gpio_pinstate_t;
+
+typedef enum {
+  GPIO_PINMODE_OUTPUT = 0,
+  GPIO_PINMODE_INPUT = 1
+} gpio_pinmode_t;
+
+// Interface class for the MCP23017 16-pin GPIO IC
+class GPIO : public IOInterface<gpio_pinstate_t, gpio_pin_t, gpio_pinstate_t, gpio_pin_t> {
+  public:
+    /**
+     * Read a GPIO pin.
+     * @param fqa
+     * @param dest Pin state
+     * @param args Pin number
+     **/
+    static i2cip_errorlevel_t get(const i2cip_fqa_t& fqa, gpio_pinstate_t& dest, const gpio_pin_t& args) override;
+
+    /**
+     * Write to a GPIO pin.
+     * @param fqa
+     * @param dest Pin state
+     * @param args Pin number
+     **/
+    static i2cip_errorlevel_t set(const i2cip_fqa_t& fqa, const gpio_pinstate_t& value, const gpio_pin_t& args) override;
+
+    static const char* getID(void) override;
+  private:
+    /**
+     * @param fqa
+     * @param pin Pin number
+     * @param mode Pin mode
+     **/
+    static i2cip_errorlevel_t pinMode(const i2cip_fqa_t& fqa, const gpio_pin_t& pin, const gpio_pinmode_t& mode);
 };
 
 #endif
