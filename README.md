@@ -73,3 +73,12 @@ Interface
 - Sensor and actuator instance-related code should not be const
 - Static API code (i.e. ids, factories) should be const (and preferrably PROGMEM)
 - Avoid passing around pointers to const pointers. It's already const.
+
+## Hardware Spec
+
+### Connector Pinouts
+
+- I2C: JST SH 1.00mm 4-pin (1: GND, 2: +5V, 3: SDA, 4: SCL)
+- Middleware Output Signals: Molex Micro-Lock PLUS 2-pin (1: Signal, 2: GND)
+- Endware Recieving Signals: Molex Micro-Lock PLUS 2-pin (1: GND, 2: Signal)
+- Power: Molex Micro-Fit 3.0 2-pin (1: GND, 2: VCC)

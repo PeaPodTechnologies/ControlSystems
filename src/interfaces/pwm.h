@@ -4,9 +4,6 @@
 #include <Arduino.h>
 #include <I2CIP.h>
 
-#include <types.h>
-#include <interface.h>
-
 // MACROS
 // Registers
 #define PCA9685_MODE1         0x00 // Mode Register 1
@@ -38,36 +35,41 @@
 // Settings
 #define PWM_ADDR  0x40
 #define PWM_FREQ  490
-#define PWM_ID   "pwm"
 
 #define PWM_CHANNEL_TO_LEDREG(channel) (uint8_t)(0x06 + (4 * channel))
 
+using namespace I2CIP;
+
+extern const char* id_pwm;
+
+typedef enum {
+  PWM_CHANNEL_0,
+  PWM_CHANNEL_1,
+  PWM_CHANNEL_2,
+  PWM_CHANNEL_3,
+  PWM_CHANNEL_4,
+  PWM_CHANNEL_5,
+  PWM_CHANNEL_6,
+  PWM_CHANNEL_7,
+  PWM_CHANNEL_8,
+  PWM_CHANNEL_9,
+  PWM_CHANNEL_10,
+  PWM_CHANNEL_11,
+  PWM_CHANNEL_12,
+  PWM_CHANNEL_13,
+  PWM_CHANNEL_14,
+  PWM_CHANNEL_15,
+} args_pwm_t;
+
 // Interface class for the PCA9685 16-channel 12-bit PWM IC
-class PWM : public OutputInterface<uint16_t, pwm_channel_t> {
+class PWM : public Device, public OutputInterface<uint16_t, args_pwm_t> {
   // Note: unsigned 16-bit args are TRUNCATED to 12-bit PWM control
   private:
 
   public:
-    typedef enum {
-      PWM_CHANNEL_0,
-      PWM_CHANNEL_1,
-      PWM_CHANNEL_2,
-      PWM_CHANNEL_3,
-      PWM_CHANNEL_4,
-      PWM_CHANNEL_5,
-      PWM_CHANNEL_6,
-      PWM_CHANNEL_7,
-      PWM_CHANNEL_8,
-      PWM_CHANNEL_9,
-      PWM_CHANNEL_10,
-      PWM_CHANNEL_11,
-      PWM_CHANNEL_12,
-      PWM_CHANNEL_13,
-      PWM_CHANNEL_14,
-      PWM_CHANNEL_15,
-    } pwm_channel_t;
-    static i2cip_errorlevel_t set(const i2cip_fqa_t& fqa, const uint16_t& value, const pwm_channel_t& args) override;
-    static const char* getID(void) override;
+    explicit PWM(const i2cip_fqa_t& fqa);
+
+    i2cip_errorlevel_t set(const uint16_t& value, const args_pwm_t& args) override;
 };
 
 #endif

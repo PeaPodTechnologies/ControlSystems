@@ -4,9 +4,6 @@
 #include <Arduino.h>
 #include <I2CIP.h>
 
-#include <types.h>
-#include <interface.h>
-
 // MACROS
 // Registers
 #define GPIO_IODIR    0x00 // I/O direction register
@@ -26,7 +23,6 @@
 
 // Settings
 #define GPIO_ADDR     0x20 // Default address
-#define GPIO_ID       "gpio"
 
 /**
  * Determine shifted register address from pin number.
@@ -52,46 +48,49 @@ typedef enum {
   GPIO_PIN_B5,
   GPIO_PIN_B6,
   GPIO_PIN_B7,
-} gpio_pin_t;
+} args_gpio_t;
 
 typedef enum {
   GPIO_PIN_UNDEF = -1,
   GPIO_PIN_LOW = LOW,
   GPIO_PIN_HIGH = HIGH
-} gpio_pinstate_t;
+} state_gpio_t;
 
 typedef enum {
   GPIO_PINMODE_OUTPUT = 0,
   GPIO_PINMODE_INPUT = 1
 } gpio_pinmode_t;
 
+using namespace I2CIP;
+
+extern const char* id_gpio;
+
 // Interface class for the MCP23017 16-pin GPIO IC
-class GPIO : public IOInterface<gpio_pinstate_t, gpio_pin_t, gpio_pinstate_t, gpio_pin_t> {
-  public:
-    /**
-     * Read a GPIO pin.
-     * @param fqa
-     * @param dest Pin state
-     * @param args Pin number
-     **/
-    static i2cip_errorlevel_t get(const i2cip_fqa_t& fqa, gpio_pinstate_t& dest, const gpio_pin_t& args) override;
-
-    /**
-     * Write to a GPIO pin.
-     * @param fqa
-     * @param dest Pin state
-     * @param args Pin number
-     **/
-    static i2cip_errorlevel_t set(const i2cip_fqa_t& fqa, const gpio_pinstate_t& value, const gpio_pin_t& args) override;
-
-    static const char* getID(void) override;
+class GPIO : public Device, public IOInterface<state_gpio_t, args_gpio_t, state_gpio_t, args_gpio_t> {
   private:
     /**
      * @param fqa
      * @param pin Pin number
      * @param mode Pin mode
      **/
-    static i2cip_errorlevel_t pinMode(const i2cip_fqa_t& fqa, const gpio_pin_t& pin, const gpio_pinmode_t& mode);
+    i2cip_errorlevel_t pinMode(const args_gpio_t& pin, const gpio_pinmode_t& mode);
+
+  public:
+    explicit GPIO(const i2cip_fqa_t& fqa);
+
+    /**
+     * Read a GPIO pin.
+     * @param dest Pin state
+     * @param args Pin number
+     **/
+    i2cip_errorlevel_t get(state_gpio_t& dest, const args_gpio_t& args) override;
+
+    /**
+     * Write to a GPIO pin.
+     * @param dest Pin state
+     * @param args Pin number
+     **/
+    i2cip_errorlevel_t set(const state_gpio_t& value, const args_gpio_t& args) override;
 };
 
 #endif

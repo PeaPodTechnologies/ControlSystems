@@ -2,12 +2,12 @@
 #define CSOS_INTERFACES_ADC_H_
 
 #include <Arduino.h>
-
-#include <types.h>
-#include <interface.h>
+#include <I2CIP.h>
 
 // Not sure if this will break something. Let's try it and find out
+#ifdef ADC
 #undef ADC
+#endif
 
 // REGISTERS
 
@@ -85,31 +85,25 @@
 #define ADC_CHANNEL_TO_MUX(channel) (0x4000 + (channel) * 0x1000)
 
 // SETTINGS
-#define ADC_ADDR  0x48
-#define ADC_SHIFT 4
-#define ADC_GAIN  ADC::GAIN_TWOTHIRDS // +/-6.144V for 0-5V single-ended analogRead
-#define ADC_SPS   ADC_RATE_1600SPS
+#define ADC_ADDR    0x48
+#define ADC_SHIFT   4
+#define ADC_GAIN    ADC::GAIN_TWOTHIRDS // +/-6.144V for 0-5V single-ended analogRead
+#define ADC_SPS     ADC_RATE_1600SPS
 #define ADC_TIMEOUT 100
+
+extern const char* id_adc;
+
+using namespace I2CIP;
 
 typedef enum {
   ADC_CHANNEL_0,
   ADC_CHANNEL_1,
   ADC_CHANNEL_2,
   ADC_CHANNEL_3
-} adc_channel_t;
+} args_adc_t;
 
-// Interface class for the ADS1015 12-bit ADC IC
-class ADC : public InputInterface<float, adc_channel_t> {
-  public:
-    /**
-     * Read an ADC channel.
-     * @param fqa
-     * @param dest Pin state
-     * @param args Pin number
-     **/
-    static i2cip_errorlevel_t get(const i2cip_fqa_t& fqa, float& dest, const adc_channel_t& args) override;
-
-    static const char* getID(void) override;
+// Interface class for the ADS1015 12-bit ADC IC. Reads analog voltage (range: +/-6.144V)
+class ADC : public Device, public InputInterface<float, args_adc_t> {
   private:
     // Gain settings
     typedef enum {
@@ -121,7 +115,18 @@ class ADC : public InputInterface<float, adc_channel_t> {
       GAIN_SIXTEEN = ADC_REG_CONFIG_PGA_0_256V
     } adc_gain_t;
 
-    float computeVolts(int16_t counts);
+    static float computeVolts(int16_t counts);
+    
+  public:
+    explicit ADC(const i2cip_fqa_t& fqa);
+    
+    /**
+     * Read an ADC channel.
+     * @param fqa
+     * @param dest Pin state
+     * @param args Pin number
+     **/
+    i2cip_errorlevel_t get(float& dest, const args_adc_t& args) override;
 };
 
 #endif

@@ -1,11 +1,13 @@
 #include <interfaces/adc.h>
 
 #include <Arduino.h>
+#include <I2CIP.h>
 
-#include <types.h>
-#include <interface.h>
+const char* id_adc = "ADS1015";
 
-static i2cip_errorlevel_t get(const i2cip_fqa_t& fqa, float& dest, const adc_channel_t& args) override {
+ADC::ADC(const i2cip_fqa_t& fqa) : Device(fqa, id_adc) { }
+
+i2cip_errorlevel_t ADC::get(float& dest, const args_adc_t& args) {
   // Set config register values
   uint16_t config =
     ADC_REG_CONFIG_CQUE_1CONV   | // Set CQUE to any value other than none so we can use it in RDY mode
@@ -19,13 +21,16 @@ static i2cip_errorlevel_t get(const i2cip_fqa_t& fqa, float& dest, const adc_cha
     ADC_REG_CONFIG_OS_SINGLE;     // Set 'start single-conversion' bit
 
   // Overwrite config register
-  i2cip_errorlevel_t errlev = Device::writeRegister(fqa, ADC_REG_POINTER_CONFIG, config);
+  i2cip_errorlevel_t errlev = this->writeRegister(ADC_REG_POINTER_CONFIG, config);
   I2CIP_ERR_BREAK(errlev);
 
   // Write threshold registers
-  errlev = Device::writeRegister(fqa, ADC_REG_POINTER_HITHRESH, (uint16_t)0x8000);
+  uint16_t instr = 0x8000;
+  errlev = this->writeRegister(ADC_REG_POINTER_HITHRESH, instr);
   I2CIP_ERR_BREAK(errlev);
-  errlev = Device::writeRegister(fqa, ADC_REG_POINTER_LOWTHRESH, (uint16_t)0x0000);
+
+  instr = 0x0;
+  errlev = this->writeRegister(ADC_REG_POINTER_LOWTHRESH, instr);
   I2CIP_ERR_BREAK(errlev);
 
   // Wait for the conversion to complete
@@ -36,17 +41,18 @@ static i2cip_errorlevel_t get(const i2cip_fqa_t& fqa, float& dest, const adc_cha
       errlev = I2CIP_ERR_SOFT;
       break;
     }
-    errlev = Device::readRegisterWord(fqa, ADC_REG_POINTER_CONFIG, ready);
+    errlev = this->readRegisterWord(ADC_REG_POINTER_CONFIG, ready);
     timeout++;
-  } while((ready & 0x8000 == 0) && (errlev == I2CIP_ERR_NONE));
+  } while(((ready & 0x8000) == 0) && (errlev == I2CIP_ERR_NONE));
   I2CIP_ERR_BREAK(errlev);
 
   // Read the conversion results
-  uint16_t result = NAN;
-  errlev = Device::readRegisterWord(fqa, ADC_REG_POINTER_CONVERT, result);
+  uint16_t result;
+  errlev = this->readRegisterWord(ADC_REG_POINTER_CONVERT, result);
   I2CIP_ERR_BREAK(errlev);
   uint8_t buf [2] = { 0 };
-  result &= read(buf, 2);
+  size_t readlen = 2;
+  result &= this->read(buf, readlen);
 
   // Shift 12-bit results right 4 bits for the ADS1015, making sure we keep the sign bit intact
   uint16_t res = (((uint16_t)buf[0] << 8) | buf[1]) >> ADC_SHIFT;
@@ -54,8 +60,8 @@ static i2cip_errorlevel_t get(const i2cip_fqa_t& fqa, float& dest, const adc_cha
     // negative number - extend the sign to 16th bit
     res |= 0xF000;
   }
-  *dest = computeVolts((int16_t)res);
-  return result;
+  dest = ADC::computeVolts((int16_t)res);
+  return errlev;
 }
 
 float ADC::computeVolts(int16_t counts) {
