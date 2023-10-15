@@ -96,37 +96,57 @@ extern const char* id_adc;
 using namespace I2CIP;
 
 typedef enum {
-  ADC_CHANNEL_0,
+  ADC_CHANNEL_NULL = 0xFF,
+  ADC_CHANNEL_0 = 0x0,
   ADC_CHANNEL_1,
   ADC_CHANNEL_2,
   ADC_CHANNEL_3
 } args_adc_t;
 
-// Interface class for the ADS1015 12-bit ADC IC. Reads analog voltage (range: +/-6.144V)
-class ADC : public Device, public InputInterface<float, args_adc_t> {
-  private:
-    // Gain settings
-    typedef enum {
-      GAIN_TWOTHIRDS = ADC_REG_CONFIG_PGA_6_144V,
-      GAIN_ONE = ADC_REG_CONFIG_PGA_4_096V,
-      GAIN_TWO = ADC_REG_CONFIG_PGA_2_048V,
-      GAIN_FOUR = ADC_REG_CONFIG_PGA_1_024V,
-      GAIN_EIGHT = ADC_REG_CONFIG_PGA_0_512V,
-      GAIN_SIXTEEN = ADC_REG_CONFIG_PGA_0_256V
-    } adc_gain_t;
+namespace ControlSystemsOS {
 
-    static float computeVolts(int16_t counts);
-    
-  public:
-    explicit ADC(const i2cip_fqa_t& fqa);
-    
-    /**
-     * Read an ADC channel.
-     * @param fqa
-     * @param dest Pin state
-     * @param args Pin number
-     **/
-    i2cip_errorlevel_t get(float& dest, const args_adc_t& args) override;
+  extern const char PROGMEM csos_id_adc[];
+
+  Device* adcFactory(const i2cip_fqa_t& fqa);
+
+  // Interface class for the ADS1015 12-bit ADC IC. Reads analog voltage (range: +/-6.144V)
+  class ADC : public Device, public InputInterface<float, args_adc_t> {
+    friend class Linker;
+    friend Device* adcFactory(const i2cip_fqa_t& fqa);
+
+    private:
+      const float default_cache = 0.0f;
+      const args_adc_t default_a = ADC_CHANNEL_NULL;
+
+      // Gain settings
+      typedef enum {
+        GAIN_TWOTHIRDS = ADC_REG_CONFIG_PGA_6_144V,
+        GAIN_ONE = ADC_REG_CONFIG_PGA_4_096V,
+        GAIN_TWO = ADC_REG_CONFIG_PGA_2_048V,
+        GAIN_FOUR = ADC_REG_CONFIG_PGA_1_024V,
+        GAIN_EIGHT = ADC_REG_CONFIG_PGA_0_512V,
+        GAIN_SIXTEEN = ADC_REG_CONFIG_PGA_0_256V
+      } adc_gain_t;
+
+      static float computeVolts(int16_t counts);
+
+      static bool _id_set;
+      static char _id[]; // to be loaded from progmem
+      
+    public:
+      explicit ADC(const i2cip_fqa_t& fqa);
+      
+      /**
+       * Read an ADC channel.
+       * @param fqa
+       * @param dest Pin state
+       * @param args Pin number
+       **/
+      i2cip_errorlevel_t get(float& dest, const args_adc_t& args) override;
+
+      const args_adc_t& getDefaultA(void) const override;
+      void clearCache(void) override;
+  };
 };
 
 #endif

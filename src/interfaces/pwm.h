@@ -40,10 +40,9 @@
 
 using namespace I2CIP;
 
-extern const char* id_pwm;
-
 typedef enum {
-  PWM_CHANNEL_0,
+  PWM_CHANNEL_NULL = 0xFF,
+  PWM_CHANNEL_0 = 0x00,
   PWM_CHANNEL_1,
   PWM_CHANNEL_2,
   PWM_CHANNEL_3,
@@ -61,15 +60,32 @@ typedef enum {
   PWM_CHANNEL_15,
 } args_pwm_t;
 
-// Interface class for the PCA9685 16-channel 12-bit PWM IC
-class PWM : public Device, public OutputInterface<uint16_t, args_pwm_t> {
-  // Note: unsigned 16-bit args are TRUNCATED to 12-bit PWM control
-  private:
+namespace ControlSystemsOS {
 
-  public:
-    explicit PWM(const i2cip_fqa_t& fqa);
+  extern const char PROGMEM csos_id_pwm[];
 
-    i2cip_errorlevel_t set(const uint16_t& value, const args_pwm_t& args) override;
+  Device* pwmFactory(const i2cip_fqa_t& fqa);
+
+  // Interface class for the PCA9685 16-channel 12-bit PWM IC
+  class PWM : public Device, public OutputInterface<uint16_t, args_pwm_t> {
+    friend class Linker;
+    friend Device* pwmFactory(const i2cip_fqa_t& fqa);
+
+    // Note: unsigned 16-bit args are TRUNCATED to 12-bit PWM control
+    private:
+      const uint16_t default_failsafe = 0x0000;
+      const args_pwm_t default_b = PWM_CHANNEL_NULL;
+
+      static bool _id_set;
+      static char _id[]; // to be loaded from progmem
+    public:
+      explicit PWM(const i2cip_fqa_t& fqa);
+
+      i2cip_errorlevel_t set(const uint16_t& value, const args_pwm_t& args) override;
+
+      const args_pwm_t& getDefaultB(void) const override;
+      void resetFailsafe(void) override;
+  };
 };
 
 #endif

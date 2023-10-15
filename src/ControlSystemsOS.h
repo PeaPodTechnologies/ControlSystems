@@ -1,75 +1,78 @@
 #ifndef CSOS_CSOS_H_
 #define CSOS_CSOS_H_
 
+#include <Arduino.h>
 #include <I2CIP.h>
-#include <timer.h>
+#include <chrono.h>
 
 #include <ArduinoJson.h>
 
-#include <utils/bst.h>
-#include <utils/hashtable.h>
+#include <interfaces.h>
 
 // #include <sensors/sensor.h>
 // #include <actuators/actuator.h>
-
-#define NUM_DEVICE_TYPES 3
 
 #define CSOS_MODULE_JSON_DOCSIZE (size_t)(I2CIP_EEPROM_SIZE * 3 / 2)
 
 using namespace I2CIP;
 
-// typedef Sensor* (* const factory_sensor_t)(const Device* fqa);
-
-// static i2cip_id_t map_sensor_id[NUM_SENSOR_TYPES] = { nullptr };
-// static factory_sensor_t map_sensor_factory[NUM_SENSOR_TYPES] = { nullptr };
-
-// typedef Actuator* (* const factory_actuator_t)(const Device* fqa);
-
-// static i2cip_id_t map_actuator_id[NUM_ACTUATOR_TYPES] = { nullptr };
-// static factory_actuator_t map_actuator_factory[NUM_ACTUATOR_TYPES] = { nullptr };
-
-// array of print functions
-
-// array of  
-
-typedef HashTable<DeviceGroup&> i2cip_devicetable_t;
-
-// HashTable
-  // key/ID (1) - heap (const char*)
-  // HashTableEntry - heap (arr of ptrs)
-
-// BST of device IDs by FQA
-typedef BST<i2cip_fqa_t, i2cip_id_t> i2cip_devicetree_t;
-
-// BST node; key: FQA, value: ID
-typedef BSTNode<i2cip_fqa_t, i2cip_id_t> i2cip_device_t;
+typedef i2cip_errorlevel_t (* interfaceHandler_t)(Device*);
 
 namespace ControlSystemsOS {
 
+  typedef enum {
+    CSOS_NULL =   0x0,
+    CSOS_BOOL =   0x1,
+    CSOS_UINT8 =  0x2,
+    CSOS_INT8 =   0x3,
+    CSOS_UINT16 = 0x4,
+    CSOS_INT16 =  0x5,
+    CSOS_UINT32 = 0x6,
+    CSOS_INT32 =  0x7,
+    CSOS_FLOAT =  0x8,
+    CSOS_DOUBLE = 0x9,
+    CSOS_STRING = 0xA,
+  } csos_types_t;
+
   class CSOSModule : public Module {
+    private:
+      StaticJsonDocument<CSOS_MODULE_JSON_DOCSIZE> eeprom_json;
+
+    protected:
+      DeviceGroup* deviceGroupFactory(const i2cip_id_t& id) override;
+
+      bool parseEEPROMContents(const char* eeprom_contents) override;
+
     public:
       CSOSModule(const uint8_t& wire, const uint8_t& module);
 
-      StaticJsonDocument<CSOS_MODULE_JSON_DOCSIZE> eeprom_json;
-
-      bool parseEEPROMContents(const uint8_t* buffer, size_t buflen) override;
+      ~CSOSModule() { }
   };
+
+  i2cip_errorlevel_t update(bool build = false);
+  i2cip_errorlevel_t update(const uint8_t& wire, const uint8_t& mod, bool build = true);
+  i2cip_errorlevel_t fixedUpdate(unsigned long timestamp);
+  i2cip_errorlevel_t fixedUpdate(unsigned long timestamp, CSOSModule& m);
       
-  extern BST<i2cip_fqa_t, i2cip_id_t> interfaces;
-  extern HashTable<DeviceGroup&> groups;
-  extern CSOSModule* modules[I2CIP_NUM_WIRES][I2CIP_MUX_COUNT];
+  extern CSOSModule* csos_modules[I2CIP_NUM_WIRES][I2CIP_MUX_COUNT];
 
-  extern const char* csos_map_device_id[NUM_DEVICE_TYPES];
-  extern const i2cip_itype_t csos_map_device_itype[NUM_DEVICE_TYPES];
-  extern const factory_device_t csos_map_device_factory[NUM_DEVICE_TYPES];
+  static Linker linker;
+  
+  // extern fsm_timestamp_t csos_modules_lastChecked[I2CIP_NUM_WIRES][I2CIP_MUX_COUNT];
 
-  HashTableEntry<DeviceGroup&>* addNewGroup(const i2cip_id_t& id, const i2cip_itype_t& itype, const factory_device_t& factory);
+  // extern const csos_types_t csos_map_interface_state[];
+  // extern const csos_types_t csos_map_interface_args[];
+
+  // extern bool stateChange;
 
   // new SHT31(fqa)
 
-  void initialize(void);
-  void update(void);
-  void fixedUpdate(unsigned long timestamp);
+  // void initialize(void);
+  
+
+  // i2cip_errorlevel_t handleDevice(Device* device);
+  // template <typename G, typename A> i2cip_errorlevel_t handleInputDevice(Device* device, const A& args);
+  // template <typename S, typename B> i2cip_errorlevel_t handleOutputDevice(Device* device, const S& value, const B& args);
 
   /**
    * Find a device group by ID.

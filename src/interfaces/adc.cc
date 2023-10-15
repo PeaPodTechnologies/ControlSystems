@@ -3,11 +3,81 @@
 #include <Arduino.h>
 #include <I2CIP.h>
 
-const char* id_adc = "ADS1015";
+const char ControlSystemsOS::csos_id_adc[] PROGMEM = {"ADS1015"};
 
-ADC::ADC(const i2cip_fqa_t& fqa) : Device(fqa, id_adc) { }
+bool ControlSystemsOS::ADC::_id_set;
+char ControlSystemsOS::ADC::_id[I2CIP_ID_SIZE];
 
-i2cip_errorlevel_t ADC::get(float& dest, const args_adc_t& args) {
+// Handles ID pointer assignment too
+I2CIP::Device* ControlSystemsOS::adcFactory(const i2cip_fqa_t& fqa) {
+  if(!ControlSystemsOS::ADC::_id_set) {
+    uint8_t idlen = strlen_P(csos_id_adc);
+
+    #ifdef I2CIP_DEBUG_SERIAL
+      DEBUG_DELAY();
+      I2CIP_DEBUG_SERIAL.print(F("Loading GPIO ID PROGMEM to Static Array @0x"));
+      I2CIP_DEBUG_SERIAL.print((uint16_t)(&(ControlSystemsOS::ADC::_id[0])), HEX);
+      I2CIP_DEBUG_SERIAL.print(F(" ("));
+      I2CIP_DEBUG_SERIAL.print(idlen+1);
+      I2CIP_DEBUG_SERIAL.print(F(" bytes) '"));
+    #endif
+
+    // Read in PROGMEM
+    for (uint8_t k = 0; k < idlen; k++) {
+      char c = pgm_read_byte_near(csos_id_adc + k);
+      #ifdef I2CIP_DEBUG_SERIAL
+        DEBUG_SERIAL.print(c);
+      #endif
+      ControlSystemsOS::ADC::_id[k] = c;
+    }
+
+    ControlSystemsOS::ADC::_id[idlen] = '\0';
+    ControlSystemsOS::ADC::_id_set = true;
+
+    #ifdef I2CIP_DEBUG_SERIAL
+      DEBUG_SERIAL.print("'\n");
+      DEBUG_DELAY();
+    #endif
+  }
+
+  return (I2CIP::Device*)(new ControlSystemsOS::ADC(fqa));
+}
+
+using namespace ControlSystemsOS;
+
+ControlSystemsOS::ADC::ADC(const i2cip_fqa_t& fqa) : Device(fqa, ADC::_id), InputInterface<float, args_adc_t>((Device*)this) {
+  if(!ControlSystemsOS::ADC::_id_set) {
+    uint8_t idlen = strlen_P(csos_id_adc);
+
+    #ifdef I2CIP_DEBUG_SERIAL
+      DEBUG_DELAY();
+      I2CIP_DEBUG_SERIAL.print(F("Loading ADC ID PROGMEM to Static Array @0x"));
+      I2CIP_DEBUG_SERIAL.print((uint16_t)(&(ControlSystemsOS::ADC::_id[0])), HEX);
+      I2CIP_DEBUG_SERIAL.print(F(" ("));
+      I2CIP_DEBUG_SERIAL.print(idlen+1);
+      I2CIP_DEBUG_SERIAL.print(F(" bytes) '"));
+    #endif
+
+    // Read in PROGMEM
+    for (uint8_t k = 0; k < idlen; k++) {
+      char c = pgm_read_byte_near(csos_id_adc + k);
+      #ifdef I2CIP_DEBUG_SERIAL
+        DEBUG_SERIAL.print(c);
+      #endif
+      ControlSystemsOS::ADC::_id[k] = c;
+    }
+
+    ControlSystemsOS::ADC::_id[idlen] = '\0';
+    ControlSystemsOS::ADC::_id_set = true;
+
+    #ifdef I2CIP_DEBUG_SERIAL
+      DEBUG_SERIAL.print("'\n");
+      DEBUG_DELAY();
+    #endif
+  }
+}
+
+i2cip_errorlevel_t ControlSystemsOS::ADC::get(float& dest, const args_adc_t& args) {
   // Set config register values
   uint16_t config =
     ADC_REG_CONFIG_CQUE_1CONV   | // Set CQUE to any value other than none so we can use it in RDY mode
@@ -60,11 +130,25 @@ i2cip_errorlevel_t ADC::get(float& dest, const args_adc_t& args) {
     // negative number - extend the sign to 16th bit
     res |= 0xF000;
   }
-  dest = ADC::computeVolts((int16_t)res);
+  dest = ControlSystemsOS::ADC::computeVolts((int16_t)res);
   return errlev;
 }
 
-float ADC::computeVolts(int16_t counts) {
+const args_adc_t& ControlSystemsOS::ADC::getDefaultA(void) const {
+  return ControlSystemsOS::ADC::default_a;
+}
+
+void ControlSystemsOS::ADC::clearCache(void) {
+  this->setCache(ControlSystemsOS::ADC::default_cache);
+
+  #ifdef CSOS_DEBUG_SERIAL
+    DEBUG_DELAY();
+    CSOS_DEBUG_SERIAL.print(F("ADC Cache Cleared\n"));
+    DEBUG_DELAY();
+  #endif
+}
+
+float ControlSystemsOS::ADC::computeVolts(int16_t counts) {
   // see data sheet Table 3
   float fsRange;
   switch (ADC_GAIN) {

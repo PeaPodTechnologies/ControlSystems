@@ -32,7 +32,8 @@
 #define GPIO_PIN_SHIFT(pin) (pin % 8)
 
 typedef enum {
-  GPIO_PIN_A0,
+  GPIO_PIN_NULL = 0xFF,
+  GPIO_PIN_A0 = 0,
   GPIO_PIN_A1,
   GPIO_PIN_A2,
   GPIO_PIN_A3,
@@ -51,46 +52,67 @@ typedef enum {
 } args_gpio_t;
 
 typedef enum {
-  GPIO_PIN_UNDEF = -1,
+  GPIO_PIN_UNDEF = 0xFF,
   GPIO_PIN_LOW = LOW,
   GPIO_PIN_HIGH = HIGH
 } state_gpio_t;
 
 typedef enum {
+  // GPIO_PINMODE_UNDEF = 0xFF,
   GPIO_PINMODE_OUTPUT = 0,
   GPIO_PINMODE_INPUT = 1
 } gpio_pinmode_t;
 
 using namespace I2CIP;
 
-extern const char* id_gpio;
+namespace ControlSystemsOS {
 
-// Interface class for the MCP23017 16-pin GPIO IC
-class GPIO : public Device, public IOInterface<state_gpio_t, args_gpio_t, state_gpio_t, args_gpio_t> {
-  private:
-    /**
-     * @param fqa
-     * @param pin Pin number
-     * @param mode Pin mode
-     **/
-    i2cip_errorlevel_t pinMode(const args_gpio_t& pin, const gpio_pinmode_t& mode);
+  extern const char PROGMEM csos_id_gpio[];
 
-  public:
-    explicit GPIO(const i2cip_fqa_t& fqa);
+  Device* gpioFactory(const i2cip_fqa_t& fqa);
 
-    /**
-     * Read a GPIO pin.
-     * @param dest Pin state
-     * @param args Pin number
-     **/
-    i2cip_errorlevel_t get(state_gpio_t& dest, const args_gpio_t& args) override;
+  // Interface class for the MCP23017 16-pin GPIO IC
+  class GPIO : public Device, public IOInterface<state_gpio_t, args_gpio_t, state_gpio_t, args_gpio_t> {
+    friend class Linker;
+    friend Device* gpioFactory(const i2cip_fqa_t& fqa);
 
-    /**
-     * Write to a GPIO pin.
-     * @param dest Pin state
-     * @param args Pin number
-     **/
-    i2cip_errorlevel_t set(const state_gpio_t& value, const args_gpio_t& args) override;
+    private:
+      const state_gpio_t default_cache = GPIO_PIN_UNDEF;
+      const args_gpio_t default_a = GPIO_PIN_NULL;
+      const state_gpio_t default_failsafe = GPIO_PIN_LOW;
+      const args_gpio_t default_b = GPIO_PIN_NULL;
+      /**
+       * @param fqa
+       * @param pin Pin number
+       * @param mode Pin mode
+       **/
+      i2cip_errorlevel_t pinMode(const args_gpio_t& pin, const gpio_pinmode_t& mode);
+
+      static bool _id_set;
+      static char _id[]; // to be loaded from progmem
+
+    public:
+      explicit GPIO(const i2cip_fqa_t& fqa);
+
+      /**
+       * Read a GPIO pin.
+       * @param dest Pin state
+       * @param args Pin number
+       **/
+      i2cip_errorlevel_t get(state_gpio_t& dest, const args_gpio_t& args) override;
+
+      /**
+       * Write to a GPIO pin.
+       * @param dest Pin state
+       * @param args Pin number
+       **/
+      i2cip_errorlevel_t set(const state_gpio_t& value, const args_gpio_t& args) override;
+
+      const args_gpio_t& getDefaultA(void) const override;
+      void clearCache(void) override;
+      const args_gpio_t& getDefaultB(void) const override;
+      void resetFailsafe(void) override;
+  };
 };
 
 #endif
