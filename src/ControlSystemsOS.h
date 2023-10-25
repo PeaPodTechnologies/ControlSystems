@@ -3,16 +3,23 @@
 
 #include <Arduino.h>
 #include <I2CIP.h>
-#include <chrono.h>
+// #include <chrono.h>
 
 #include <ArduinoJson.h>
 
-#include <interfaces.h>
+#include <interfaces/linker.h>
 
 // #include <sensors/sensor.h>
 // #include <actuators/actuator.h>
 
 #define CSOS_MODULE_JSON_DOCSIZE (size_t)(I2CIP_EEPROM_SIZE * 3 / 2)
+
+// #define CSOS_DEBUG_DISABLE_FSTRINGS 1
+#ifdef CSOS_DEBUG_DISABLE_FSTRINGS
+#define _F(x) x
+#else
+#define _F(x) F(x)
+#endif
 
 using namespace I2CIP;
 
@@ -34,6 +41,8 @@ namespace ControlSystemsOS {
     CSOS_STRING = 0xA,
   } csos_types_t;
 
+  // MODULE DEFINITION
+
   class CSOSModule : public Module {
     private:
       StaticJsonDocument<CSOS_MODULE_JSON_DOCSIZE> eeprom_json;
@@ -49,14 +58,17 @@ namespace ControlSystemsOS {
       ~CSOSModule() { }
   };
 
+
   i2cip_errorlevel_t update(bool build = false);
   i2cip_errorlevel_t update(const uint8_t& wire, const uint8_t& mod, bool build = true);
   i2cip_errorlevel_t fixedUpdate(unsigned long timestamp);
   i2cip_errorlevel_t fixedUpdate(unsigned long timestamp, CSOSModule& m);
       
   extern CSOSModule* csos_modules[I2CIP_NUM_WIRES][I2CIP_MUX_COUNT];
+  extern const char* device_id_map[MAP_INDEX_COUNT];
+  extern bool device_id_loaded[MAP_INDEX_COUNT];
 
-  static Linker linker;
+  // static Linker linker;
   
   // extern fsm_timestamp_t csos_modules_lastChecked[I2CIP_NUM_WIRES][I2CIP_MUX_COUNT];
 

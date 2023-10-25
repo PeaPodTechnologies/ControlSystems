@@ -91,8 +91,6 @@
 #define ADC_SPS     ADC_RATE_1600SPS
 #define ADC_TIMEOUT 100
 
-extern const char* id_adc;
-
 using namespace I2CIP;
 
 typedef enum {
@@ -105,15 +103,10 @@ typedef enum {
 
 namespace ControlSystemsOS {
 
-  extern const char PROGMEM csos_id_adc[];
-
-  Device* adcFactory(const i2cip_fqa_t& fqa);
-
   // Interface class for the ADS1015 12-bit ADC IC. Reads analog voltage (range: +/-6.144V)
   class ADC : public Device, public InputInterface<float, args_adc_t> {
-    friend class Linker;
-    friend Device* adcFactory(const i2cip_fqa_t& fqa);
-
+    friend Device* ControlSystemsOS::adcFactory(const i2cip_fqa_t& fqa);
+    
     private:
       const float default_cache = 0.0f;
       const args_adc_t default_a = ADC_CHANNEL_NULL;
@@ -129,13 +122,10 @@ namespace ControlSystemsOS {
       } adc_gain_t;
 
       static float computeVolts(int16_t counts);
+      
+      ADC(const i2cip_fqa_t& fqa, const i2cip_id_t& id);
 
-      static bool _id_set;
-      static char _id[]; // to be loaded from progmem
-      
     public:
-      explicit ADC(const i2cip_fqa_t& fqa);
-      
       /**
        * Read an ADC channel.
        * @param fqa

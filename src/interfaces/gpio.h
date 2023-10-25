@@ -67,15 +67,10 @@ using namespace I2CIP;
 
 namespace ControlSystemsOS {
 
-  extern const char PROGMEM csos_id_gpio[];
-
-  Device* gpioFactory(const i2cip_fqa_t& fqa);
-
   // Interface class for the MCP23017 16-pin GPIO IC
   class GPIO : public Device, public IOInterface<state_gpio_t, args_gpio_t, state_gpio_t, args_gpio_t> {
-    friend class Linker;
     friend Device* gpioFactory(const i2cip_fqa_t& fqa);
-
+    
     private:
       const state_gpio_t default_cache = GPIO_PIN_UNDEF;
       const args_gpio_t default_a = GPIO_PIN_NULL;
@@ -88,12 +83,9 @@ namespace ControlSystemsOS {
        **/
       i2cip_errorlevel_t pinMode(const args_gpio_t& pin, const gpio_pinmode_t& mode);
 
-      static bool _id_set;
-      static char _id[]; // to be loaded from progmem
+      GPIO(const i2cip_fqa_t& fqa, const i2cip_id_t& id);
 
     public:
-      explicit GPIO(const i2cip_fqa_t& fqa);
-
       /**
        * Read a GPIO pin.
        * @param dest Pin state

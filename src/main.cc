@@ -10,8 +10,11 @@
 
 #define FIXED_UPDATE_DELTA 1000
 
-fsm_timestamp_t start = 0;
-fsm_timestamp_t lastFixedUpdate = 0;
+#ifdef FSM_TIMER_H_
+  fsm_timestamp_t start = 0;
+  fsm_timestamp_t lastFixedUpdate = 0;
+#endif
+
 bool rebuild = false;
 
 void setup(void) {
@@ -19,9 +22,11 @@ void setup(void) {
   Serial.begin(115200);
   while(!Serial);
 
-  start = millis();
+  #ifdef FSM_TIMER_H_
+    start = millis();
+  #endif
 
-  Serial.println(F("==== [ CYCLE 0 (BUILD) ] ===="));
+  Serial.println("==== [ CYCLE 0 (BUILD) ] ====");
 
   delay(1000);
 
@@ -47,7 +52,9 @@ void loop(void) {
 
   delay(1000);
 
-  fsm_timestamp_t cyclestart = millis();
+  #ifdef FSM_TIMER_H_
+    fsm_timestamp_t cyclestart = millis();
+  #endif
 
   // 0. Module State-Change Forward-Propagation
   // TODO: Move to `Module`?
@@ -92,11 +99,11 @@ void loop(void) {
   if(errlev > I2CIP_ERR_NONE) return;
 
   // 1b. Device Checking Per-Group
-  fsm_timestamp_t now = millis();
-  if((now - lastFixedUpdate) > FIXED_UPDATE_DELTA) {
-    errlev = ControlSystemsOS::fixedUpdate(now);
-    lastFixedUpdate = millis();
-  }
+  // fsm_timestamp_t now = millis();
+  // if((now - lastFixedUpdate) > FIXED_UPDATE_DELTA) {
+  //   errlev = ControlSystemsOS::fixedUpdate(now);
+  //   lastFixedUpdate = millis();
+  // }
 
   // 2. Fixed Update - Instruction and Control Handling
 

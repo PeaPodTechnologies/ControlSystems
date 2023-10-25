@@ -62,13 +62,8 @@ typedef enum {
 
 namespace ControlSystemsOS {
 
-  extern const char PROGMEM csos_id_pwm[];
-
-  Device* pwmFactory(const i2cip_fqa_t& fqa);
-
   // Interface class for the PCA9685 16-channel 12-bit PWM IC
   class PWM : public Device, public OutputInterface<uint16_t, args_pwm_t> {
-    friend class Linker;
     friend Device* pwmFactory(const i2cip_fqa_t& fqa);
 
     // Note: unsigned 16-bit args are TRUNCATED to 12-bit PWM control
@@ -76,11 +71,9 @@ namespace ControlSystemsOS {
       const uint16_t default_failsafe = 0x0000;
       const args_pwm_t default_b = PWM_CHANNEL_NULL;
 
-      static bool _id_set;
-      static char _id[]; // to be loaded from progmem
-    public:
-      explicit PWM(const i2cip_fqa_t& fqa);
+      PWM(const i2cip_fqa_t& fqa, const i2cip_id_t& id);
 
+    public:
       i2cip_errorlevel_t set(const uint16_t& value, const args_pwm_t& args) override;
 
       const args_pwm_t& getDefaultB(void) const override;
