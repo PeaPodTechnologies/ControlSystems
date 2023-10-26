@@ -493,7 +493,7 @@ i2cip_errorlevel_t ControlSystemsOS::update(bool build) {
     #endif
     
     for(uint8_t modnum = 0; modnum < I2CIP_MUX_COUNT; modnum++) {
-      errlev = update(wirenum, modnum, csos_modules[wirenum][modnum] == nullptr);
+      errlev = update(wirenum, modnum, build || csos_modules[wirenum][modnum] == nullptr);
       I2CIP_ERR_BREAK(errlev);
     }
   }
