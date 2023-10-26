@@ -27,3 +27,9 @@ I2CIP::Device* ControlSystemsOS::gpioFactory(const i2cip_fqa_t& fqa) {
 I2CIP::Device* ControlSystemsOS::pwmFactory(const i2cip_fqa_t& fqa) {
   return new ControlSystemsOS::PWM(fqa, getDeviceID(MAP_INDEX_PWM));
 }
+
+// 4. SHT31
+#include <interfaces/sht31.h>
+I2CIP::Device* ControlSystemsOS::sht31Factory(const i2cip_fqa_t& fqa) {
+  return new ControlSystemsOS::SHT31(fqa, getDeviceID(MAP_INDEX_SHT31));
+}

@@ -2,6 +2,8 @@
 
 #include <Arduino.h>
 
+// #define DEBUG 1 // Uncomment to enable debug
+
 // BASIC DEBUG MACRO
 #ifdef DEBUG
 #if DEBUG == true
@@ -19,11 +21,11 @@
 // DEBUG DELAY MACRO FOR SERIAL OUTPUT STABILITY (OPTIONAL)
 #ifdef CSOS_DEBUG_SERIAL
 #ifndef DEBUG_DELAY
-#define DEBUG_DELAY() {delay(30);}
+#define DEBUG_DELAY() {delay(10);}
 #endif
 #endif
 
 #endif
 
-#include <../I2CIP/debug.h>
-#include <../FiniteStateMachine/debug.h>
+// #include <../I2CIP/debug.h>
+// #include <../FiniteStateMachine/debug.h>

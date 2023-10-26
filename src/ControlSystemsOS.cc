@@ -5,6 +5,7 @@
 
 #include <Arduino.h>
 #include <ArduinoJSON.h>
+#include <chrono.h>
 
 // #define DEBUG 1
 
@@ -24,7 +25,7 @@ bool ControlSystemsOS::device_id_loaded[MAP_INDEX_COUNT] = { false, false, false
 int ControlSystemsOS::getMapIndex(const i2cip_id_t& id) {
   for(unsigned char i = 0; i < MAP_INDEX_COUNT; i++) {
     // Compare strings ignoring case
-    if(strcasecmp(id, getDeviceID(i)) == 0){
+    if(strcasecmp_P(id, ControlSystemsOS::device_id_progmem[i]) == 0){
       #ifdef CSOS_DEBUG_SERIAL
         DEBUG_DELAY();
         CSOS_DEBUG_SERIAL.print(_F("-> Map Lookup "));
@@ -45,24 +46,24 @@ int ControlSystemsOS::getMapIndex(const i2cip_id_t& id) {
 }
 
 const char* ControlSystemsOS::getDeviceID(uint8_t index) {
-  #ifdef CSOS_DEBUG_SERIAL
-    DEBUG_DELAY();
-    CSOS_DEBUG_SERIAL.print(_F("-> Map ID "));
-    CSOS_DEBUG_SERIAL.print(index);
-    CSOS_DEBUG_SERIAL.print(_F(": "));
-  #endif
+  // #ifdef CSOS_DEBUG_SERIAL
+  //   DEBUG_DELAY();
+  //   CSOS_DEBUG_SERIAL.print(_F("-> Map ID "));
+  //   CSOS_DEBUG_SERIAL.print(index);
+  //   CSOS_DEBUG_SERIAL.print(_F(": "));
+  // #endif
   if(index >= MAP_INDEX_COUNT) {
-    #ifdef CSOS_DEBUG_SERIAL
-    CSOS_DEBUG_SERIAL.print(_F("Out of Range!"));
-    DEBUG_DELAY();
-    #endif
+    // #ifdef CSOS_DEBUG_SERIAL
+    // CSOS_DEBUG_SERIAL.print(_F("Out of Range!"));
+    // DEBUG_DELAY();
+    // #endif
     return nullptr;
   }
   if(device_id_map == nullptr) device_id_loaded[index] = false;
   if(!device_id_loaded[index]) {
-    #ifdef CSOS_DEBUG_SERIAL
-    CSOS_DEBUG_SERIAL.print(_F("(Loading... "));
-    #endif
+    // #ifdef CSOS_DEBUG_SERIAL
+    // CSOS_DEBUG_SERIAL.print(_F("(Loading... "));
+    // #endif
     if(index == MAP_INDEX_EEPROM) {
       device_id_map[MAP_INDEX_EEPROM] = EEPROM::getStaticIDBuffer();
     } else {
@@ -72,20 +73,20 @@ const char* ControlSystemsOS::getDeviceID(uint8_t index) {
       device_id_map[index] = s2;
     }
     device_id_loaded[index] = (device_id_map != nullptr);
-    #ifdef CSOS_DEBUG_SERIAL
-    CSOS_DEBUG_SERIAL.print(device_id_loaded[index] ? _F("Success) ") : _F("Fail!)\n"));
-    #endif
+    // #ifdef CSOS_DEBUG_SERIAL
+    // CSOS_DEBUG_SERIAL.print(device_id_loaded[index] ? _F("Success) ") : _F("Fail!)\n"));
+    // #endif
   }
-  #ifdef CSOS_DEBUG_SERIAL
-    if(device_id_map != nullptr) {
-      CSOS_DEBUG_SERIAL.print(_F("ID '"));
-      CSOS_DEBUG_SERIAL.print(device_id_map[index]);
-      CSOS_DEBUG_SERIAL.print(_F("' @0x"));
-      CSOS_DEBUG_SERIAL.print((uint16_t)device_id_map[index], HEX);
-      CSOS_DEBUG_SERIAL.print("]\n");
-    }
-    DEBUG_DELAY();
-  #endif
+  // #ifdef CSOS_DEBUG_SERIAL
+  //   if(device_id_map != nullptr) {
+  //     CSOS_DEBUG_SERIAL.print(_F("ID '"));
+  //     CSOS_DEBUG_SERIAL.print(device_id_map[index]);
+  //     CSOS_DEBUG_SERIAL.print(_F("' @0x"));
+  //     CSOS_DEBUG_SERIAL.print((uint16_t)device_id_map[index], HEX);
+  //     CSOS_DEBUG_SERIAL.print("]\n");
+  //   }
+  //   DEBUG_DELAY();
+  // #endif
   return device_id_map[index];
 }
 
@@ -105,7 +106,7 @@ DeviceGroup* CSOSModule::deviceGroupFactory(const i2cip_id_t& lookup) {
     CSOS_DEBUG_SERIAL.print(_F("')\n"));
     DEBUG_DELAY();
   #endif
-  int index = getMapIndex(lookup);
+  int index = ControlSystemsOS::getMapIndex(lookup);
   if(index < 0) {
     #ifdef CSOS_DEBUG_SERIAL
       DEBUG_DELAY();
@@ -127,11 +128,18 @@ DeviceGroup* CSOSModule::deviceGroupFactory(const i2cip_id_t& lookup) {
     CSOS_DEBUG_SERIAL.print(index);
     CSOS_DEBUG_SERIAL.print(", Factory @0x");
     CSOS_DEBUG_SERIAL.print((uint16_t)device_factory[index], HEX);
-    CSOS_DEBUG_SERIAL.print(")\n");
+    CSOS_DEBUG_SERIAL.print("): ");
+  #endif
+
+  DeviceGroup* dg = new DeviceGroup(id, device_factory[index]);
+
+  #ifdef CSOS_DEBUG_SERIAL
+    DEBUG_DELAY();
+    CSOS_DEBUG_SERIAL.print(dg == nullptr ? _F("Fail!\n") : _F("Success!\n"));
     DEBUG_DELAY();
   #endif
 
-  return new DeviceGroup(id, device_factory[index]);
+  return dg;
 }
 
 bool CSOSModule::parseEEPROMContents(const char* buffer) {
@@ -283,6 +291,13 @@ bool CSOSModule::parseEEPROMContents(const char* buffer) {
             DEBUG_DELAY();
           #endif
           continue;
+        } else {
+          #ifdef CSOS_DEBUG_SERIAL
+            DEBUG_DELAY();
+            CSOS_DEBUG_SERIAL.print(_F("-> Factory Success! (Adding)\n"));
+            DEBUG_DELAY();
+          #endif
+          this->add(*d);
         }
       }
 
@@ -498,9 +513,9 @@ i2cip_errorlevel_t ControlSystemsOS::fixedUpdate(unsigned long timestamp, CSOSMo
   i2cip_errorlevel_t errlev = I2CIP_ERR_NONE;
 
   // 1. FSM Timer Functionality
-  #ifdef FSM_TIMER_H_
-    Chronos.set(timestamp);
-  #endif
+  // #ifdef FSM_TIMER_H_
+  //   Chronos.set(timestamp);
+  // #endif
 
   // 2. Control Systems Fixed Update per-ID
   for(uint8_t i = 0; i < MAP_INDEX_COUNT; i++) {
@@ -529,6 +544,15 @@ i2cip_errorlevel_t ControlSystemsOS::fixedUpdate(unsigned long timestamp, CSOSMo
     for(uint8_t j = 0; j < dg->numdevices; j++) {
       Device* device = dg->devices[j];
       if(device == nullptr) break;
+
+      if(device->getFQA() == ((const EEPROM&)m).getFQA()) {
+        #ifdef CSOS_DEBUG_SERIAL
+          DEBUG_DELAY();
+          CSOS_DEBUG_SERIAL.print(_F("-> SPRT EEPROM! Skipping...\n"));
+          DEBUG_DELAY();
+        #endif
+        continue;
+      }
 
       #ifdef CSOS_DEBUG_SERIAL
         DEBUG_DELAY();
@@ -584,7 +608,9 @@ i2cip_errorlevel_t ControlSystemsOS::fixedUpdate(unsigned long timestamp, CSOSMo
 i2cip_errorlevel_t ControlSystemsOS::fixedUpdate(unsigned long timestamp) {
   #ifdef CSOS_DEBUG_SERIAL
     DEBUG_DELAY();
-    CSOS_DEBUG_SERIAL.print(_F("=== [ CONTROLSYSTEMS UPDATE ] ===\n"));
+    CSOS_DEBUG_SERIAL.print(_F("=== [ CONTROLSYSTEMS UPDATE T + "));
+    Chronograph::debugTimestamp(timestamp);
+    CSOS_DEBUG_SERIAL.print(_F(" ] ===\n"));
     DEBUG_DELAY();
   #endif
 

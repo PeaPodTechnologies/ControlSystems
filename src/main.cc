@@ -2,18 +2,15 @@
 
 #include <Arduino.h>
 
-#define DEBUG_SERIAL Serial
-
 #include <debug.h>
 
 #include <ControlSystemsOS.h>
+#include <chrono.h>
 
 #define FIXED_UPDATE_DELTA 1000
 
-#ifdef FSM_TIMER_H_
-  fsm_timestamp_t start = 0;
-  fsm_timestamp_t lastFixedUpdate = 0;
-#endif
+fsm_timestamp_t start = 0;
+fsm_timestamp_t lastFixedUpdate = 0;
 
 bool rebuild = false;
 
@@ -22,9 +19,7 @@ void setup(void) {
   Serial.begin(115200);
   while(!Serial);
 
-  #ifdef FSM_TIMER_H_
-    start = millis();
-  #endif
+  start = millis();
 
   Serial.println("==== [ CYCLE 0 (BUILD) ] ====");
 
@@ -52,9 +47,7 @@ void loop(void) {
 
   delay(1000);
 
-  #ifdef FSM_TIMER_H_
-    fsm_timestamp_t cyclestart = millis();
-  #endif
+  fsm_timestamp_t cyclestart = millis();
 
   // 0. Module State-Change Forward-Propagation
   // TODO: Move to `Module`?
@@ -99,11 +92,11 @@ void loop(void) {
   if(errlev > I2CIP_ERR_NONE) return;
 
   // 1b. Device Checking Per-Group
-  // fsm_timestamp_t now = millis();
-  // if((now - lastFixedUpdate) > FIXED_UPDATE_DELTA) {
-  //   errlev = ControlSystemsOS::fixedUpdate(now);
-  //   lastFixedUpdate = millis();
-  // }
+  fsm_timestamp_t now = millis();
+  if((now - lastFixedUpdate) > FIXED_UPDATE_DELTA) {
+    errlev = ControlSystemsOS::fixedUpdate(now);
+    lastFixedUpdate = millis();
+  }
 
   // 2. Fixed Update - Instruction and Control Handling
 

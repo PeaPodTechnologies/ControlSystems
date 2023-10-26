@@ -1,8 +1,6 @@
 #include <Arduino.h>
 #include <unity.h>
 
-#include <i2cip/eeprom.h>
-#include <i2cip/mux.h>
 #include <I2CIP.h>
 #include "../config.h"
 
@@ -58,6 +56,6 @@ void setup() {
   UNITY_END();
 }
 
-void loop() {
+void loop() {w
 
 }
