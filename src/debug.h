@@ -14,9 +14,9 @@
 #endif
 
 // CROSS-LIBRARY DEBUG COMPATIBILITY
-#ifdef DEBUG_SERIAL
-#define CSOS_DEBUG_SERIAL DEBUG_SERIAL
-#endif
+// #ifdef DEBUG_SERIAL
+// #define CSOS_DEBUG_SERIAL DEBUG_SERIAL
+// #endif
 
 // DEBUG DELAY MACRO FOR SERIAL OUTPUT STABILITY (OPTIONAL)
 #ifdef CSOS_DEBUG_SERIAL
@@ -27,5 +27,5 @@
 
 #endif
 
-// #include <../I2CIP/debug.h>
-// #include <../FiniteStateMachine/debug.h>
+#include <../I2CIP/debug.h>
+#include <../FiniteStateMachine/debug.h>

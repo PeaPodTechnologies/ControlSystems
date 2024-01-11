@@ -1,4 +1,6 @@
 #ifndef UNIT_TEST
+#ifndef MAIN
+#define MAIN true
 
 #include <Arduino.h>
 
@@ -21,13 +23,29 @@ void setup(void) {
 
   start = millis();
 
-  Serial.println("==== [ CYCLE 0 (BUILD) ] ====");
+  Serial.println(F("==== [ CYCLE -1 (MEM) ] ===="));
+  Serial.print(F("Module: "));
+  Serial.print(sizeof(ControlSystemsOS::CSOSModule));
+  Serial.print(F("\nHashTable: "));
+  Serial.print(sizeof(HashTable<DeviceGroup&>));
+  Serial.print(F("\nHashTableEntry: "));
+  Serial.print(sizeof(HashTableEntry<DeviceGroup&>));
+  Serial.print(F("\nBST: "));
+  Serial.print(sizeof(BST<i2cip_fqa_t, Device*>));
+  Serial.print(F("\nBSTNode: "));
+  Serial.print(sizeof(BSTNode<i2cip_fqa_t, Device*>));
+  Serial.print(F("\nDeviceGroup: "));
+  Serial.print(sizeof(DeviceGroup));
+  Serial.print(F("\nEEPROM: "));
+  Serial.print(sizeof(EEPROM));
+  Serial.println();
+  Serial.println(F("==== [ CYCLE 0 (BUILD) ] ===="));
 
   delay(1000);
 
   i2cip_errorlevel_t errlev = ControlSystemsOS::update(true);
   if(errlev > I2CIP_ERR_NONE) {
-    Serial.println("==== [ BUILD FAILED, FREEZING ] ====");
+    Serial.println(F("==== [ BUILD FAILED, FREEZING ] ===="));
     while(true) { // Blink
       digitalWrite(LED_BUILTIN, HIGH);
       delay(100);
@@ -120,4 +138,5 @@ void loop(void) {
 //
 // 3. Fixed Update - Instruction and Control Handling
 
+#endif
 #endif

@@ -1,3 +1,5 @@
+#define MAIN true
+
 #include <Arduino.h>
 
 #include <debug.h>

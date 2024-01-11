@@ -4,6 +4,8 @@
 #include <Arduino.h>
 #include <I2CIP.h>
 
+#include <sensors/sensor.h>
+
 // MACROS
 
 // Registers
@@ -38,7 +40,7 @@ typedef struct {
 namespace ControlSystemsOS {
 
   // Interface class for the SHT31 air temperature and humidity sensor
-  class SHT31 : public Device, public InputInterface<state_sht31_t, args_sht31_t> {
+  class SHT31 : public Device, public InputInterface<state_sht31_t, args_sht31_t>, public Sensor {
     friend Device* ControlSystemsOS::sht31Factory(const i2cip_fqa_t& fqa);
 
     // Note: unsigned 16-bit args are TRUNCATED to 12-bit PWM control
@@ -53,6 +55,8 @@ namespace ControlSystemsOS {
 
       const args_sht31_t& getDefaultA(void) const override;
       void clearCache(void) override;
+
+      Datum* datumFactory(void) override;
   };
 };
 

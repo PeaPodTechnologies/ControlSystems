@@ -3,7 +3,7 @@
 
 #include <Arduino.h>
 #include <I2CIP.h>
-// #include <chrono.h>
+#include <chrono.h>
 
 #include <ArduinoJson.h>
 
@@ -27,20 +27,6 @@ typedef i2cip_errorlevel_t (* interfaceHandler_t)(Device*);
 
 namespace ControlSystemsOS {
 
-  typedef enum {
-    CSOS_NULL =   0x0,
-    CSOS_BOOL =   0x1,
-    CSOS_UINT8 =  0x2,
-    CSOS_INT8 =   0x3,
-    CSOS_UINT16 = 0x4,
-    CSOS_INT16 =  0x5,
-    CSOS_UINT32 = 0x6,
-    CSOS_INT32 =  0x7,
-    CSOS_FLOAT =  0x8,
-    CSOS_DOUBLE = 0x9,
-    CSOS_STRING = 0xA,
-  } csos_types_t;
-
   // MODULE DEFINITION
 
   class CSOSModule : public Module {
@@ -48,7 +34,7 @@ namespace ControlSystemsOS {
       StaticJsonDocument<CSOS_MODULE_JSON_DOCSIZE> eeprom_json;
 
     protected:
-      DeviceGroup* deviceGroupFactory(const i2cip_id_t& id) override;
+      DeviceGroup* deviceGroupFactory(i2cip_id_t id) override;
 
       bool parseEEPROMContents(const char* eeprom_contents) override;
 
@@ -65,7 +51,7 @@ namespace ControlSystemsOS {
   i2cip_errorlevel_t fixedUpdate(unsigned long timestamp, CSOSModule& m);
       
   extern CSOSModule* csos_modules[I2CIP_NUM_WIRES][I2CIP_MUX_COUNT];
-  extern const char* device_id_map[MAP_INDEX_COUNT];
+  extern char device_id_map[MAP_INDEX_COUNT][I2CIP_ID_SIZE];
   extern bool device_id_loaded[MAP_INDEX_COUNT];
 
   // static Linker linker;

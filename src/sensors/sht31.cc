@@ -1,4 +1,4 @@
-#include <interfaces/sht31.h>
+#include <sensors/sht31.h>
 
 static uint8_t crc8(const uint8_t *data, int len) {
   /*
@@ -27,7 +27,7 @@ static uint8_t crc8(const uint8_t *data, int len) {
 
 using namespace ControlSystemsOS;
 
-SHT31::SHT31(const i2cip_fqa_t& fqa, const i2cip_id_t& id) : Device(fqa, id), InputInterface<state_sht31_t, args_sht31_t>((Device*)this) { }
+SHT31::SHT31(const i2cip_fqa_t& fqa, const i2cip_id_t& id) : Device(fqa, id), InputInterface<state_sht31_t, args_sht31_t>((Device*)this), Sensor((InputGetter*)this) { }
 
 i2cip_errorlevel_t SHT31::get(state_sht31_t& value, const args_sht31_t& args) {
   size_t buflen = 6;
@@ -81,4 +81,14 @@ const args_sht31_t& SHT31::getDefaultA(void) const {
 
 void SHT31::clearCache(void) {
   this->setCache(this->default_cache);
+}
+
+Datum* SHT31::datumFactory(void) {
+  csos_data_t hum = {.f = this->getCache().humidity};
+  Datum* humidity = new Datum(CSOS_FLOAT, hum, "air_humidity");
+
+  csos_data_t temp = {.f = this->getCache().temperature};
+  Datum* temperature = new Datum(CSOS_FLOAT, temp, "air_temperature", humidity);
+
+  return temperature;
 }
