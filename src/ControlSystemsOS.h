@@ -9,7 +9,11 @@
 
 #include <interfaces/linker.h>
 
-// #include <sensors/sensor.h>
+#ifndef MAP_INDEX_COUNT
+#define MAP_INDEX_COUNT 1
+#endif
+
+#include <sensors/sensor.h>
 // #include <actuators/actuator.h>
 
 #define CSOS_MODULE_JSON_DOCSIZE (size_t)(I2CIP_EEPROM_SIZE * 3 / 2)

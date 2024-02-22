@@ -20,8 +20,15 @@ ControlSystemsOS::CSOSModule* ControlSystemsOS::csos_modules[I2CIP_NUM_WIRES][I2
 // GLOBAL CONSTANT MAPS
 
 // Internal Use
-char ControlSystemsOS::device_id_map[MAP_INDEX_COUNT][I2CIP_ID_SIZE] = { {'\0'}, {'\0'} };
-bool ControlSystemsOS::device_id_loaded[MAP_INDEX_COUNT] = { false, false };
+char ControlSystemsOS::device_id_map[MAP_INDEX_COUNT][I2CIP_ID_SIZE] = { 
+  {'\0'}, 
+  {'\0'} 
+};
+
+bool ControlSystemsOS::device_id_loaded[MAP_INDEX_COUNT] = { 
+  false,
+  false
+};
 
 int ControlSystemsOS::getMapIndex(const i2cip_id_t& id) {
   for(unsigned char i = 0; i < MAP_INDEX_COUNT; i++) {
@@ -136,21 +143,21 @@ DeviceGroup* CSOSModule::deviceGroupFactory(i2cip_id_t lookup) {
     DEBUG_DELAY();
   #endif
 
-  Serial.print(_F("-> Creating DeviceGroup '"));
-  Serial.print(id);
-  Serial.print(_F("' (Map Index "));
-  Serial.print(index);
-  Serial.print(_F(", Factory @0x"));
-  Serial.print((uint16_t)device_factory[index], HEX);
-  Serial.print("): ");
+  // Serial.print(_F("-> Creating DeviceGroup '"));
+  // Serial.print(id);
+  // Serial.print(_F("' (Map Index "));
+  // Serial.print(index);
+  // Serial.print(_F(", Factory @0x"));
+  // Serial.print((uint16_t)device_factory[index], HEX);
+  // Serial.print("): ");
 
   DeviceGroup* dg = new DeviceGroup(id, device_factory[index]);
 
-  if(dg == nullptr) {
-      Serial.print(_F("Fail!\n"));
-    } else {
-      Serial.print(_F("Success!\n"));
-    }
+  // if(dg == nullptr) {
+  //     Serial.print(_F("Fail!\n"));
+  //   } else {
+  //     Serial.print(_F("Success!\n"));
+  //   }
 
   #ifdef CSOS_DEBUG_SERIAL
     DEBUG_DELAY();

@@ -9,10 +9,16 @@
 #include <ControlSystemsOS.h>
 #include <chrono.h>
 
+#include <avr/wdt.h>
+
+#define TIMESTAMP_LOG_DELTA_MS 5000 // Default
+
 #define FIXED_UPDATE_DELTA 1000
 
+#include "simple.h"
+
 fsm_timestamp_t start = 0;
-fsm_timestamp_t lastFixedUpdate = 0;
+fsm_timestamp_t ms_last = 0;
 
 bool rebuild = false;
 
@@ -21,24 +27,58 @@ void setup(void) {
   Serial.begin(115200);
   while(!Serial);
 
+  // Pin Modes
+  pinMode(PIN_LIGHTING_LO, OUTPUT);
+  pinMode(PIN_LIGHTING_HI, OUTPUT);
+  pinMode(PIN_WATERING, OUTPUT);
+  pinMode(PIN_DISCO_BUTTON, INPUT);
+
+  lighting.addLoggerCallback(&logLights);
+  watering.addLoggerCallback(&logWatering);
+
+  lighting.addLatchingConditional(true, false, &controlLights);
+  watering.addLatchingConditional(true, false, &controlWatering);
+  disco.addLatchingConditional(true, false, &controlDisco);
+
+  // Timestamp output
+  Chronos.addInterval(TIMESTAMP_LOG_DELTA_MS, &logTimestamp);
+
+  // Timer Flag Event - Lighting ON (No-Invert)
+  Chronos.addEventFlag(DELAY_START, &lighting);
+
+  // Timer Flag Event - Lighting OFF (Inverted)
+  Chronos.addEventFlag(DELAY_START + DURATION_LIGHTING, &lighting, true);
+
+  // Timer Flag Interval - Watering ON (No-Invert)
+  Chronos.addIntervalFlag(PERIOD_WATERING, &watering);
+
+  // Timer Flag Interval - Watering OFF (Invert)
+  Chronos.addIntervalFlag(PERIOD_WATERING, DURATION_WATERING, &watering, true);
+
+  // Disco Scroller Callback - passes interval timestamp
+  // discoScroller = 
+  Chronos.addInterval(DELTA_DISCO, &scrollDisco);
+
+  // Disco Controller - Dis-/En-ables Disco Scroller Callback
+
   start = millis();
 
-  Serial.println(F("==== [ CYCLE -1 (MEM) ] ===="));
-  Serial.print(F("Module: "));
-  Serial.print(sizeof(ControlSystemsOS::CSOSModule));
-  Serial.print(F("\nHashTable: "));
-  Serial.print(sizeof(HashTable<DeviceGroup&>));
-  Serial.print(F("\nHashTableEntry: "));
-  Serial.print(sizeof(HashTableEntry<DeviceGroup&>));
-  Serial.print(F("\nBST: "));
-  Serial.print(sizeof(BST<i2cip_fqa_t, Device*>));
-  Serial.print(F("\nBSTNode: "));
-  Serial.print(sizeof(BSTNode<i2cip_fqa_t, Device*>));
-  Serial.print(F("\nDeviceGroup: "));
-  Serial.print(sizeof(DeviceGroup));
-  Serial.print(F("\nEEPROM: "));
-  Serial.print(sizeof(EEPROM));
-  Serial.println();
+  // Serial.println(F("==== [ CYCLE -1 (SIZEOF) ] ===="));
+  // Serial.print(F("Module: "));
+  // Serial.print(sizeof(ControlSystemsOS::CSOSModule));
+  // Serial.print(F("\nHashTable: "));
+  // Serial.print(sizeof(HashTable<DeviceGroup&>));
+  // Serial.print(F("\nHashTableEntry: "));
+  // Serial.print(sizeof(HashTableEntry<DeviceGroup&>));
+  // Serial.print(F("\nBST: "));
+  // Serial.print(sizeof(BST<i2cip_fqa_t, Device*>));
+  // Serial.print(F("\nBSTNode: "));
+  // Serial.print(sizeof(BSTNode<i2cip_fqa_t, Device*>));
+  // Serial.print(F("\nDeviceGroup: "));
+  // Serial.print(sizeof(DeviceGroup));
+  // Serial.print(F("\nEEPROM: "));
+  // Serial.print(sizeof(EEPROM));
+  // Serial.println();
   Serial.println(F("==== [ CYCLE 0 (BUILD) ] ===="));
 
   delay(1000);
@@ -53,19 +93,27 @@ void setup(void) {
       delay(100);
     }
   }
+
+  #ifdef _AVR_WDT_H_
+    wdt_enable(WDTO_4S);
+  #endif
 }
 
 uint8_t cycle = 0;
 
 void loop(void) {
+  #ifdef _AVR_WDT_H_
+    wdt_reset();
+  #endif
+
   cycle++;
-  Serial.print("\n\n==== [ CYCLE ");
+  Serial.print(F("\n\n==== [ CYCLE "));
   Serial.print(cycle);
-  Serial.println(" ] ====");
+  Serial.println(F(" ] ===="));
 
-  delay(1000);
-
-  fsm_timestamp_t cyclestart = millis();
+  fsm_timestamp_t ms_start = millis();
+  // Watchdog Timer 24Hr Kickout
+  if(ms_start > TWENTYFOURHRS_MILLIS) { while(true) { delay(1); } }
 
   // 0. Module State-Change Forward-Propagation
   // TODO: Move to `Module`?
@@ -110,13 +158,22 @@ void loop(void) {
   if(errlev > I2CIP_ERR_NONE) return;
 
   // 1b. Device Checking Per-Group
-  fsm_timestamp_t now = millis();
-  if((now - lastFixedUpdate) > FIXED_UPDATE_DELTA) {
-    errlev = ControlSystemsOS::fixedUpdate(now);
-    lastFixedUpdate = millis();
+  fsm_timestamp_t ms_now = millis();
+  if((ms_now - ms_last) > FIXED_UPDATE_DELTA) {
+    errlev = ControlSystemsOS::fixedUpdate(ms_now);
+    ms_last = millis();
   }
 
   // 2. Fixed Update - Instruction and Control Handling
+
+  Chronos.set(ms_start);
+
+  // Other Stuff
+
+  int discoPin = digitalRead(PIN_DISCO_BUTTON);
+  disco.set(discoPin == HIGH ? true : false);
+
+  delay(100);
 
 }
 

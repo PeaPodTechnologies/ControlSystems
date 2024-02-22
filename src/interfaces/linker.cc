@@ -1,13 +1,13 @@
 #include <interfaces/linker.h>
 
 // 0. EEPROM
-#include <eeprom.h>
+#include "../I2CIP/eeprom.h"
 I2CIP::Device* ControlSystemsOS::eepromFactory(const i2cip_fqa_t& fqa) {
   if(getDeviceID(MAP_INDEX_EEPROM) == nullptr) {
     // First time
-    return EEPROM::eepromFactory(fqa);
+    return I2CIP::EEPROM::eepromFactory(fqa);
   }
-  return EEPROM::eepromFactory(fqa, getDeviceID(MAP_INDEX_EEPROM));
+  return I2CIP::EEPROM::eepromFactory(fqa, getDeviceID(MAP_INDEX_EEPROM));
 }
 
 // 1. ADC

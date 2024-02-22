@@ -38,7 +38,7 @@ namespace ControlSystemsOS {
     // {"ADS1015\0"},
     // {"MCP23017\0"},
     // {"PCA9685\0"},
-    {"SHT31\0"},
+    {"SHT31"},
   };
 
   const I2CIP::factory_device_t device_factory[MAP_INDEX_COUNT] = {
