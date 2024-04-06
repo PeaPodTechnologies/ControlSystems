@@ -99,7 +99,7 @@ void setup(void) {
   #endif
 }
 
-uint8_t cycle = 0;
+unsigned long cycle = 0;
 
 void loop(void) {
   #ifdef _AVR_WDT_H_

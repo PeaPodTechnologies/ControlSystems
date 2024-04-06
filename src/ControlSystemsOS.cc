@@ -688,7 +688,7 @@ i2cip_errorlevel_t ControlSystemsOS::fixedUpdate(unsigned long timestamp) {
   #ifdef CSOS_DEBUG_SERIAL
     DEBUG_DELAY();
     CSOS_DEBUG_SERIAL.print(_F("=== [ CONTROLSYSTEMS UPDATE T + "));
-    Chronograph::debugTimestamp(timestamp);
+    // Chronograph::debugTimestamp(timestamp);
     CSOS_DEBUG_SERIAL.print(_F(" ] ===\n"));
     DEBUG_DELAY();
   #endif

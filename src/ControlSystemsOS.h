@@ -18,13 +18,6 @@
 
 #define CSOS_MODULE_JSON_DOCSIZE (size_t)(I2CIP_EEPROM_SIZE * 3 / 2)
 
-// #define CSOS_DEBUG_DISABLE_FSTRINGS 1
-#ifdef CSOS_DEBUG_DISABLE_FSTRINGS
-#define _F(x) x
-#else
-#define _F(x) F(x)
-#endif
-
 using namespace I2CIP;
 
 typedef i2cip_errorlevel_t (* interfaceHandler_t)(Device*);
